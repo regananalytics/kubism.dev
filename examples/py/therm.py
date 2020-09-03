@@ -3,12 +3,37 @@ import glob
 import time
 import asyncio
 import logging
-#from kubism.deploy.io import upstream
-from kubio import upstream
+import kubism
 
-# Not sure if we need these inside the container
-#os.system('modprobe w1-gpio')
-#os.system('modprobe w1-therm')
+deploy = kubism.deploy
+
+
+class temp_server(deploy.Server):
+
+
+    def __init__(self):
+        super().__init__()
+        self._Temp_C = None
+        self.map_attr('Temp_C', 'Temp_F')
+        print('Setting Callback')
+        self.set_callback(self.respond_temp)
+
+
+    async def respond_temp(self, *args):
+        temp_c, temp_f = read_temp()
+        temp_string = f'Temp:  {temp_c} C,  {temp_f} F'
+        print(temp_string)
+        await self.respond_async(temp_string.encode())
+
+
+    @property
+    def Temp_C(self):
+        pass
+
+
+    def update_state(self):
+        pass
+
 
 # Assume we've mapped the device folder to /app
 # and its where this file is located
@@ -17,7 +42,6 @@ device_file = device_folder + '/w1_slave'
 
 
 def read_temp_raw():
-    
     f = open(device_file, 'r')
     lines = f.readlines()
     f.close()
@@ -39,21 +63,11 @@ def read_temp():
 
 
 
-
-class temp_server(upstream):
-
-    def __init__(self):
-        super().__init__()
-        print('Setting Callback')
-        self.set_callback(self.respond_temp)
+def main():
+    print('Starting Server')
+    temp = temp_server()
+    asyncio.run(temp.listen_async())
 
 
-    async def respond_temp(self, *args):
-        temp_c, temp_f = read_temp()
-        temp_string = f'Temp:  {temp_c} C,  {temp_f} F'
-        print(temp_string)
-        await self.respond_async(temp_string.encode())
-
-print('Starting Server')
-temp = temp_server()
-asyncio.run(temp.listen_async())
+if __name__ == '__main__':
+    main()
