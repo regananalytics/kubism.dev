@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: py-echo
+  labels:
+    app: py-echo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: py-echo
+  template:
+    metadata:
+      labels:
+        app: py-echo
+    spec:
+      containers:
+      - name: py-echo
+        image: localhost:32000/py_echo:test
